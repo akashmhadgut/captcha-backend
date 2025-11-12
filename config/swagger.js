@@ -9,12 +9,17 @@ const options = {
       version: "1.0.0",
       description: "API documentation for Captcha Earning Web App",
     },
-    servers: [
-      {
-        url: "http://localhost:5000",
-        description: "Development Server",
-      },
-    ],
+  servers: [
+  {
+    url: "https://captcha-backend-a2fh.onrender.com",
+    description: "Production Server (Render)",
+  },
+  {
+    url: "http://localhost:5000",
+    description: "Local Development Server",
+  },
+],
+
   },
   apis: ["./routes/*.js"], // 👈 path to your route files (adjust if needed)
 };
