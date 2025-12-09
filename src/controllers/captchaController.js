@@ -40,11 +40,13 @@ exports.getRandomCaptcha = async (req, res) => {
     });
 
     // Encrypt the answer in a token (stateless verification)
+    const secret = process.env.JWT_SECRET || 'fallback_secret_key';
     const captchaToken = jwt.sign(
       { answer: captcha.text },
-      process.env.JWT_SECRET,
+      secret,
       { expiresIn: '10m' } // Captcha valid for 10 mins
     );
+    console.log(`Generated Captcha: ${captcha.text}, Token Created`);
 
     res.status(200).json({
       success: true,
@@ -77,10 +79,13 @@ exports.submitCaptcha = async (req, res) => {
     }
 
     // Verify token to get correct answer
+    const secret = process.env.JWT_SECRET || 'fallback_secret_key';
     let decoded;
     try {
-      decoded = jwt.verify(captchaId, process.env.JWT_SECRET);
+      if (!captchaId) throw new Error("Missing captchaId");
+      decoded = jwt.verify(captchaId, secret);
     } catch (err) {
+      console.error("Captcha Token Verify Error:", err.message);
       return res.status(400).json({
         success: false,
         message: 'Captcha expired or invalid. Please refresh.',
