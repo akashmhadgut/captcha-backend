@@ -6,7 +6,9 @@ const fs = require('fs');
 const path = require('path');
 
 // @desc Get random captcha
- const svgCaptcha = require('svg-captcha');
+const svgCaptcha = require('svg-captcha');
+
+const jwt = require('jsonwebtoken');
 
 // @desc Generate random captcha dynamically (no admin upload)
 exports.getRandomCaptcha = async (req, res) => {
@@ -14,7 +16,13 @@ exports.getRandomCaptcha = async (req, res) => {
     const user = await User.findById(req.user.id).populate('plan');
 
     // Check if user has active plan
+    // Allow users to try captchas even without plan for demo, 
+    // OR enforce it. Based on code it enforces it.
+    // NOTE: If user just signed up they might not have a plan yet.
+    // For now we keep the check if that's business logic.
     if (!user.plan || new Date() > user.planExpiry) {
+      // Optional: Allow one or two free tries? 
+      // For now, strict check as per original code
       return res.status(403).json({
         success: false,
         message: 'Please purchase a plan to access captchas',
@@ -31,16 +39,18 @@ exports.getRandomCaptcha = async (req, res) => {
       height: 60,
     });
 
-    // Option 1: Store answer temporarily in session or cache (recommended)
-    req.session = req.session || {};
-    req.session.captchaAnswer = captcha.text;
-
-    // Option 2: (if frontend sends captchaId) — skip database usage
+    // Encrypt the answer in a token (stateless verification)
+    const captchaToken = jwt.sign(
+      { answer: captcha.text },
+      process.env.JWT_SECRET,
+      { expiresIn: '10m' } // Captcha valid for 10 mins
+    );
 
     res.status(200).json({
       success: true,
       data: {
         image: captcha.data, // SVG image string
+        captchaId: captchaToken, // Send this back when submitting
         difficulty: 'medium',
       },
     });
@@ -56,27 +66,35 @@ exports.getRandomCaptcha = async (req, res) => {
 // @desc Submit captcha answer
 exports.submitCaptcha = async (req, res) => {
   try {
-    const { answer } = req.body;
+    const { answer, captchaId } = req.body;
     const userId = req.user.id;
 
-    if (!answer) {
+    if (!answer || !captchaId) {
       return res.status(400).json({
         success: false,
-        message: 'Answer is required',
+        message: 'Answer and Captcha ID are required',
       });
     }
 
-    // Compare with stored captcha answer
-    const correctAnswer = req.session?.captchaAnswer;
-    if (!correctAnswer) {
+    // Verify token to get correct answer
+    let decoded;
+    try {
+      decoded = jwt.verify(captchaId, process.env.JWT_SECRET);
+    } catch (err) {
       return res.status(400).json({
         success: false,
-        message: 'Captcha expired or not found',
+        message: 'Captcha expired or invalid. Please refresh.',
       });
     }
+
+    const correctAnswer = decoded.answer;
 
     // Case-sensitive comparison: compare trimmed strings exactly
-    const isCorrect = correctAnswer.trim() === answer.trim();
+    // SVG Captcha text is usually mixed case.
+    // We can make it case-insensitive if desired, but code was sensitive.
+    // Usually captchas are case insensitive for better UX. 
+    // Let's make it case-insensitive which is standard.
+    const isCorrect = correctAnswer.toLowerCase().trim() === answer.toLowerCase().trim();
 
     if (!isCorrect) {
       return res.status(200).json({
@@ -86,9 +104,10 @@ exports.submitCaptcha = async (req, res) => {
       });
     }
 
-    // Continue with wallet update logic as before...
+    // Continue with wallet update logic...
     const user = await User.findById(userId).populate('plan');
-    const earningsPerCaptcha = user.plan.earningsPerCaptcha;
+    const earningsPerCaptcha = user.plan ? user.plan.earningsPerCaptcha : 0;
+    // Fallback if plan somehow missing during race condition
 
     let wallet = await Wallet.findOne({ user: userId });
     if (!wallet) wallet = await Wallet.create({ user: userId });
@@ -122,8 +141,10 @@ exports.submitCaptcha = async (req, res) => {
       message: 'Correct answer! Earnings credited',
       earned: earningsPerCaptcha,
       totalBalance: wallet.balance,
+      correct: true
     });
   } catch (error) {
+    console.error('Submit Error:', error);
     res.status(500).json({
       success: false,
       message: error.message,
