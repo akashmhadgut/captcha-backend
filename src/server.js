@@ -16,24 +16,9 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 
 // Middleware
-// Middleware
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://captcha-frontend-puce.vercel.app",
-  process.env.FRONTEND_URL
-].filter(Boolean);
-
+// Middleware (Permissive CORS for debugging)
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log("Blocked by CORS:", origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // Allow ALL origins dynamically and reflect the origin
   credentials: true,
 }));
 app.use(express.json());
