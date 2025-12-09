@@ -18,9 +18,12 @@ const app = express();
 // Middleware
 // Middleware (Permissive CORS for debugging)
 app.use(cors({
-  origin: true, // Allow ALL origins dynamically and reflect the origin
+  origin: process.env.FRONTEND_URL,
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
