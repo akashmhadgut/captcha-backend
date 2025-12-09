@@ -1,0 +1,9 @@
+@echo off
+echo Cleaning Backend Code...
+git add src/controllers/captchaController.js
+
+echo Committing Backend...
+git commit -m "Finalize Captcha Controller: Remove debug logs for production"
+
+echo Pushing Backend...
+git push origin main
