@@ -40,6 +40,14 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/withdrawals', withdrawalRoutes);
 app.use('/api/admin', adminRoutes);
 
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Welcome to Captcha Earning Platform API',
+    docs: '/api-docs',
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({

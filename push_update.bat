@@ -1,0 +1,9 @@
+@echo off
+echo Adding updated files...
+git add src/server.js package.json
+
+echo Committing...
+git commit -m "Add root route and include svg-captcha dependency"
+
+echo Pushing...
+git push origin main
