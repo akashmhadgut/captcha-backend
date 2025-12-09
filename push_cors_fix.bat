@@ -1,0 +1,9 @@
+@echo off
+echo Updating CORS settings...
+git add src/server.js
+
+echo Committing...
+git commit -m "Fix CORS: Allow deployed frontend domain"
+
+echo Pushing...
+git push origin main

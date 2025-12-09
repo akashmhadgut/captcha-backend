@@ -1,0 +1,9 @@
+@echo off
+echo Updating captcha controller...
+git add src/controllers/captchaController.js
+
+echo Committing...
+git commit -m "Fix Captcha 400 Error: Use stateless JWT token instead of session"
+
+echo Pushing...
+git push origin main

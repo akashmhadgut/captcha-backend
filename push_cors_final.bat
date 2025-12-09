@@ -1,0 +1,9 @@
+@echo off
+echo Fixing CORS permanently...
+git add src/server.js
+
+echo Committing...
+git commit -m "Fix CORS: Enable permissive mode for Vercel preview URLs"
+
+echo Pushing...
+git push origin main

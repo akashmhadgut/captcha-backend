@@ -1,0 +1,9 @@
+@echo off
+echo Adding seed script...
+git add seed_admin.js
+
+echo Committing...
+git commit -m "Add admin seed script"
+
+echo Pushing...
+git push origin main
